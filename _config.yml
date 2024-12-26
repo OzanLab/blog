@@ -2,7 +2,7 @@ version: 3.8.5
 name: Ozan Blog
 description: The Manifest of brain stuck
 repository: https://github.com/OzanLab/blog
-url: https://ozan.web.id
+# url: https://ozan.web.id
 author: Slamet Fauzan
 timezone: Asia/Jakarta
 twitter:

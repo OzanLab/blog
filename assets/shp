@@ -1,0 +1,215 @@
+#!/usr/bin/env python3
+
+import sys
+
+PROCESS_FEE = 1250
+ADMIN_PERCENT = 0.10
+XTRA_PERCENT = 0.045
+
+# GRATIS ONGKIR XTRA
+CATEGORY_FEES = {
+    "a": 0.01,
+    "b": 0.02,
+    "c": 0.035,
+    "d": 0.055,  # default
+    "e": 0.06,
+    "f": 0.065,
+    "g": 0.075,
+    "h": 0.08
+}
+
+DEFAULT_CATEGORY = "d"
+
+
+def rupiah(n):
+    return f"Rp{n:,.0f}"
+
+
+def show_info():
+    print("""
+=== SHP CALCULATOR ===
+
+COMMAND:
+  shp net [target] [kategori]
+  shp fee [harga] [kategori]
+  shp quick [target] [kategori]
+
+CONTOH:
+  shp net 80k
+  shp net 80k d
+  shp fee 100k f
+  shp quick 80k
+
+DEFAULT:
+  kategori D jika tidak ditulis
+
+KATEGORI ONGKIR:
+  A = 1%
+  B = 2%
+  C = 3.5%
+  D = 5.5%
+  E = 6%
+  F = 6.5%
+  G = 7.5%
+  H = 8%
+
+BIAYA LAIN:
+  Admin        = 10%
+  Promo XTRA   = 4.5%
+  Biaya proses = Rp1.250
+""")
+
+
+def parse(val):
+    return float(val.lower().replace("k", "000"))
+
+
+def get_category_fee(category):
+    category = category.lower()
+    return CATEGORY_FEES.get(
+        category,
+        CATEGORY_FEES[DEFAULT_CATEGORY]
+    )
+
+
+def calc_net(target, category):
+    ongkir_percent = get_category_fee(category)
+
+    total_percent = (
+        ADMIN_PERCENT +
+        XTRA_PERCENT +
+        ongkir_percent
+    )
+
+    price = (
+        target + PROCESS_FEE
+    ) / (1 - total_percent)
+
+    admin = price * ADMIN_PERCENT
+    xtra = price * XTRA_PERCENT
+    ongkir = price * ongkir_percent
+
+    net = (
+        price
+        - admin
+        - xtra
+        - ongkir
+        - PROCESS_FEE
+    )
+
+    print("\n=== TARGET → HARGA ===")
+    print(f"Kategori           : {category.upper()}")
+    print(f"Target bersih      : {rupiah(target)}")
+    print(f"Harga produk pasang: {rupiah(price)}")
+    print("-----------------------------")
+    print(f"Biaya admin        : {rupiah(admin)}")
+    print(f"Promo XTRA         : {rupiah(xtra)}")
+    print(f"Gratis Ongkir      : {rupiah(ongkir)}")
+    print(f"Biaya proses       : {rupiah(PROCESS_FEE)}")
+    print("-----------------------------")
+    print(f"Estimasi bersih    : {rupiah(net)}\n")
+
+
+def calc_fee(price, category):
+    ongkir_percent = get_category_fee(category)
+
+    admin = price * ADMIN_PERCENT
+    xtra = price * XTRA_PERCENT
+    ongkir = price * ongkir_percent
+
+    net = (
+        price
+        - admin
+        - xtra
+        - ongkir
+        - PROCESS_FEE
+    )
+
+    print("\n=== HARGA → HASIL ===")
+    print(f"Kategori           : {category.upper()}")
+    print(f"Harga produk       : {rupiah(price)}")
+    print("-----------------------------")
+    print(f"Biaya admin        : {rupiah(admin)}")
+    print(f"Promo XTRA         : {rupiah(xtra)}")
+    print(f"Gratis Ongkir      : {rupiah(ongkir)}")
+    print(f"Biaya proses       : {rupiah(PROCESS_FEE)}")
+    print("-----------------------------")
+    print(f"Penghasilan bersih : {rupiah(net)}\n")
+
+
+def round_psy(price):
+    base = int(price // 1000) * 1000
+
+    return (
+        base + 900
+        if abs((base + 900) - price)
+        < abs((base + 1000) - price)
+        else base + 1000
+    )
+
+
+def quick(target, category):
+    ongkir_percent = get_category_fee(category)
+
+    total_percent = (
+        ADMIN_PERCENT +
+        XTRA_PERCENT +
+        ongkir_percent
+    )
+
+    price = (
+        target + PROCESS_FEE
+    ) / (1 - total_percent)
+
+    rounded = round_psy(price)
+
+    print("\n=== QUICK PRICE ===")
+    print(f"Kategori      : {category.upper()}")
+    print(f"Target bersih : {rupiah(target)}")
+    print(f"Saran harga   : {rupiah(rounded)}\n")
+
+
+def main():
+    if len(sys.argv) < 2:
+        show_info()
+        return
+
+    cmd = sys.argv[1]
+
+    if cmd == "info":
+        show_info()
+        return
+
+    if len(sys.argv) < 3:
+        print("Input kurang\n")
+        show_info()
+        return
+
+    try:
+        val = parse(sys.argv[2])
+    except:
+        print("Format angka salah")
+        return
+
+    # kategori default = D
+    category = (
+        sys.argv[3].lower()
+        if len(sys.argv) >= 4
+        else DEFAULT_CATEGORY
+    )
+
+    if cmd == "net":
+        calc_net(val, category)
+
+    elif cmd == "fee":
+        calc_fee(val, category)
+
+    elif cmd == "quick":
+        quick(val, category)
+
+    else:
+        show_info()
+
+
+if __name__ == "__main__":
+    main()
